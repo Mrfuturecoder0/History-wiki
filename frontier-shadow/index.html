@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#10191b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Frontier Shadow 3D</title>
+<style>
+:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f3ead6;background:#0a1113;touch-action:none}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;height:100dvh;margin:0;overflow:hidden;background:#0a1113;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+body{position:fixed;inset:0}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#6f898a}
+.hidden{display:none!important}
+.overlay{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 33%,rgba(67,90,82,.52),rgba(3,8,10,.96))}
+.card{width:min(570px,100%);padding:clamp(22px,5vw,42px);border:1px solid rgba(230,205,145,.32);border-radius:20px;background:linear-gradient(145deg,rgba(21,35,35,.97),rgba(7,14,16,.98));box-shadow:0 24px 80px rgba(0,0,0,.58)}
+.kicker{color:#d5b66d;text-transform:uppercase;letter-spacing:.17em;font-size:10px;font-weight:900}
+h1{font:500 clamp(38px,10vw,70px)/.87 Georgia,serif;letter-spacing:-.045em;margin:7px 0 12px}
+.subtitle{font-size:14px;line-height:1.55;color:#d0c4aa}
+.mission{margin:18px 0;padding:13px;border-left:2px solid #c2a25d;background:rgba(255,255,255,.035);font-size:13px;line-height:1.5;color:#f0e2c5}
+.primary{width:100%;padding:14px 18px;border:0;border-radius:11px;background:#c6a45d;color:#101616;font-weight:950;font-size:15px;touch-action:manipulation}
+.primary:active{transform:translateY(1px)}
+.small{margin-top:12px;color:#9ea8a2;font-size:11px;line-height:1.5}
+#hud{position:fixed;inset:0;z-index:20;pointer-events:none;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+.panel{background:linear-gradient(180deg,rgba(11,23,25,.88),rgba(4,10,12,.75));border:1px solid rgba(230,205,145,.26);box-shadow:0 10px 30px rgba(0,0,0,.32);backdrop-filter:blur(7px)}
+#objective{position:absolute;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));max-width:min(390px,calc(100vw - 110px));padding:9px 11px;border-radius:11px}
+#objectiveText{margin-top:4px;font-size:13px;line-height:1.28;font-weight:850}
+#health{position:absolute;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));width:78px;padding:9px;border-radius:11px;text-align:center;font-size:10px;font-weight:900}
+.bar{height:6px;margin-top:6px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,.12)}
+.fill{height:100%;width:100%;background:#c6aa68;transition:width .15s}
+#alert{position:absolute;left:50%;top:max(72px,calc(env(safe-area-inset-top) + 72px));transform:translateX(-50%);width:min(260px,54vw);text-align:center;font-size:10px;font-weight:950;letter-spacing:.15em;text-shadow:0 2px 8px #000}
+#alertFill{height:5px;margin-top:5px;border:1px solid rgba(255,255,255,.16);background:linear-gradient(90deg,#c5a65d 0 var(--a,0%),rgba(0,0,0,.42) var(--a,0%))}
+#prompt{position:absolute;left:50%;bottom:calc(max(18px,env(safe-area-inset-bottom)) + 98px);transform:translateX(-50%);padding:7px 10px;border-radius:8px;font-size:11px;font-weight:900;opacity:0;transition:opacity .12s;white-space:nowrap}
+#prompt.show{opacity:1}
+#toast{position:absolute;left:50%;top:23%;transform:translate(-50%,-50%);font:500 clamp(18px,4vw,28px)/1.1 Georgia,serif;text-align:center;text-shadow:0 4px 16px #000;opacity:0;transition:opacity .2s}
+#toast.show{opacity:1}
+#controls{position:fixed;inset:0;z-index:30;pointer-events:none}
+#stick{position:absolute;left:max(18px,env(safe-area-inset-left));bottom:max(20px,env(safe-area-inset-bottom));width:112px;height:112px;border-radius:50%;pointer-events:auto;border:1px solid rgba(255,255,255,.24);background:radial-gradient(circle,rgba(255,255,255,.11),rgba(255,255,255,.025));box-shadow:inset 0 0 22px rgba(0,0,0,.38)}
+#knob{position:absolute;width:48px;height:48px;left:32px;top:32px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(215,190,123,.5);box-shadow:0 4px 15px rgba(0,0,0,.35)}
+.action{position:absolute;pointer-events:auto;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(10,21,23,.7);color:#f4e7ca;font-size:10px;font-weight:950;letter-spacing:.05em;box-shadow:0 8px 22px rgba(0,0,0,.35);backdrop-filter:blur(7px);touch-action:manipulation}
+.action:active,.action.active{transform:scale(.94);background:rgba(193,157,79,.63)}
+#jump{right:max(20px,env(safe-area-inset-right));bottom:max(23px,env(safe-area-inset-bottom));width:70px;height:70px}
+#act{right:max(98px,calc(env(safe-area-inset-right) + 98px));bottom:max(69px,calc(env(safe-area-inset-bottom) + 69px));width:62px;height:62px}
+#run{right:max(25px,env(safe-area-inset-right));bottom:max(107px,calc(env(safe-area-inset-bottom) + 107px));width:56px;height:56px}
+#pauseBtn{position:absolute;right:max(13px,env(safe-area-inset-right));bottom:max(13px,env(safe-area-inset-bottom));transform:translateY(-184px);pointer-events:auto;border:1px solid rgba(255,255,255,.17);border-radius:8px;background:rgba(7,15,17,.72);color:white;padding:7px 9px;font-size:10px;font-weight:900}
+#rotate{position:fixed;z-index:45;left:50%;top:max(8px,env(safe-area-inset-top));transform:translateX(-50%);display:none;padding:7px 10px;border-radius:8px;border:1px solid rgba(230,205,145,.25);background:rgba(7,15,17,.85);font-size:10px;font-weight:900;color:#efe4ca;pointer-events:none}
+#engineBadge{position:fixed;z-index:15;left:max(12px,env(safe-area-inset-left));bottom:max(8px,env(safe-area-inset-bottom));font-size:9px;color:rgba(255,255,255,.36);pointer-events:none}
+@media(orientation:portrait) and (max-width:700px){#rotate{display:block}#objective,#health{top:max(43px,calc(env(safe-area-inset-top) + 43px))}#objective{max-width:calc(100vw - 102px)}#alert{top:max(102px,calc(env(safe-area-inset-top) + 102px))}#stick{width:100px;height:100px;left:max(13px,env(safe-area-inset-left));bottom:max(15px,env(safe-area-inset-bottom))}#knob{width:44px;height:44px;left:28px;top:28px}#jump{width:64px;height:64px;right:max(14px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom))}#act{width:57px;height:57px;right:max(84px,calc(env(safe-area-inset-right) + 84px));bottom:max(62px,calc(env(safe-area-inset-bottom) + 62px))}#run{width:52px;height:52px;right:max(18px,env(safe-area-inset-right));bottom:max(94px,calc(env(safe-area-inset-bottom) + 94px))}#pauseBtn{transform:translateY(-157px)}}
+@media(max-height:520px){.overlay{align-items:start;overflow-y:auto;padding:10px}.card{padding:18px;margin:7px auto}h1{font-size:clamp(34px,12vh,52px)}.mission{margin:10px 0}.small{margin-top:7px}}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud" class="hidden">
+  <div id="objective" class="panel"><div class="kicker">Current objective</div><div id="objectiveText"></div></div>
+  <div id="health" class="panel"><span id="healthText">HEALTH 100</span><div class="bar"><div id="healthFill" class="fill"></div></div></div>
+  <div id="alert"><span id="alertText">UNSEEN</span><div id="alertFill"></div></div>
+  <div id="prompt" class="panel"></div><div id="toast"></div>
+</div>
+<div id="controls" class="hidden">
+  <div id="stick"><div id="knob"></div></div>
+  <button id="jump" class="action">JUMP</button><button id="act" class="action">ACT</button><button id="run" class="action">RUN</button><button id="pauseBtn">PAUSE</button>
+</div>
+<div id="start" class="overlay"><div class="card"><div class="kicker">Mobile software-rendered 3D</div><h1>Frontier<br>Shadow</h1><div class="subtitle">Infiltrate a fortified colonial port, recover the governor's cipher, and escape across the docks before the garrison closes the harbor.</div><div class="mission"><strong>Mission: The Broken Seal</strong><br>Climb the church roof. Scout the fort. Recover the cipher. Reach the marked boat.</div><button id="startBtn" class="primary">Begin mission</button><div class="small">Phone: left thumb moves, drag the world to turn the camera, ACT climbs, hides, and performs stealth actions. Landscape is recommended.</div></div></div>
+<div id="pause" class="overlay hidden"><div class="card"><div class="kicker">Mission paused</div><h1>Hold<br>Position</h1><button id="resumeBtn" class="primary">Resume</button></div></div>
+<div id="end" class="overlay hidden"><div class="card"><div class="kicker">Mission complete</div><h1>The Cipher<br>Escaped</h1><div class="subtitle">The harbor patrol searches an empty dock while the evidence travels upriver.</div><button id="restartBtn" class="primary">Play again</button></div></div>
+<div id="rotate">Rotate sideways for a wider view</div><div id="engineBadge">SOFTWARE 3D MODE · READY</div>
+<script>
+(function(){
+'use strict';
+var canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
+var hud=document.getElementById('hud'),controls=document.getElementById('controls'),start=document.getElementById('start'),pause=document.getElementById('pause'),end=document.getElementById('end');
+var objectiveText=document.getElementById('objectiveText'),healthText=document.getElementById('healthText'),healthFill=document.getElementById('healthFill'),alertText=document.getElementById('alertText'),alertFill=document.getElementById('alertFill'),prompt=document.getElementById('prompt'),toast=document.getElementById('toast');
+var W=1,H=1,DPR=1,focal=500,playing=false,paused=true,complete=false,last=performance.now();
+var keys={},input={x:0,y:0,run:false,jump:false,act:false};
+var player={x:0,y:0,z:58,vy:0,yaw:0,health:100,onGround:true,hidden:false,onRoof:-1};
+var cam={yaw:0,pitch:.16,dist:13.5,height:4.8};
+var stage=0,toastTimer=0,actCooldown=0,walkT=0;
+var buildings=[],guards=[],bushes=[],decor=[];
+var colors={stone:'#8d856f',stone2:'#9a927a',wood:'#5b4330',roof:'#463c35',fort:'#6e6658',grass:'#6f7d68',road:'#8c806a',water:'#315f69',coat:'#273c38',guard:'#8f3d36',skin:'#b88462',gold:'#d6b45e'};
+function resize(){DPR=Math.min(window.devicePixelRatio||1,1.5);W=Math.max(1,document.documentElement.clientWidth);H=Math.max(1,window.visualViewport?window.visualViewport.height:document.documentElement.clientHeight);canvas.width=Math.floor(W*DPR);canvas.height=Math.floor(H*DPR);canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(DPR,0,0,DPR,0,0);focal=Math.min(W,H)*1.08;}
+addEventListener('resize',resize);if(window.visualViewport)window.visualViewport.addEventListener('resize',resize);resize();
+function box(x,z,w,d,h,c,climb){buildings.push({x:x,z:z,w:w,d:d,h:h,c:c||colors.stone,climb:climb!==false});}
+box(-23,8,14,19,7,'#a59a7d');box(22,10,17,16,8,'#8c6e58');box(-24,35,17,14,6,'#898e77');box(24,38,14,18,7,'#a19679');box(-25,-23,16,15,6.5,'#8c7461');box(26,-23,18,16,8,'#9a896c');box(-24,-48,15,12,5.5,'#998165');box(23,-48,15,13,6.5,'#857462');
+box(-47,39,18,28,10,'#afa58e');box(-47,34,7,7,20,'#a79c86');
+box(0,-78,70,3,6,colors.fort,false);box(-34,-60,3,39,6,colors.fort,false);box(34,-60,3,39,6,colors.fort,false);box(-22,-42,26,3,6,colors.fort,false);box(22,-42,26,3,6,colors.fort,false);box(0,-42,18,3,1.1,colors.fort,false);
+function bush(x,z){bushes.push({x:x,z:z,r:1.8});}[-11,12,-44,46,-11,13,-26,25].forEach(function(x,i){var zs=[42,39,17,18,-33,-34,-66,-67];bush(x,zs[i]);});
+function guard(path){guards.push({x:path[0][0],z:path[0][1],y:0,yaw:0,path:path,index:1,state:'patrol',sus:0,down:0,cool:0,lastX:path[0][0],lastZ:path[0][1]});}
+guard([[-15,18],[12,18],[12,-8],[-15,-8]]);guard([[30,30],[44,13],[30,-8],[18,9]]);guard([[-30,-33],[-15,-52],[-29,-67],[-43,-49]]);guard([[18,-55],[18,-70],[-18,-70],[-18,-55]]);guard([[8,-47],[26,-57],[8,-72],[-5,-58]]);
+function addDecor(){for(var i=0;i<28;i++)decor.push({x:-62+Math.random()*124,z:-30+Math.random()*92,s:.5+Math.random()*.8});}addDecor();
+function vsub(a,b){return{x:a.x-b.x,y:a.y-b.y,z:a.z-b.z};}function dot(a,b){return a.x*b.x+a.y*b.y+a.z*b.z;}function norm(a){var l=Math.hypot(a.x,a.y,a.z)||1;return{x:a.x/l,y:a.y/l,z:a.z/l};}function cross(a,b){return{x:a.y*b.z-a.z*b.y,y:a.z*b.x-a.x*b.z,z:a.x*b.y-a.y*b.x};}
+function cameraBasis(){var target={x:player.x,y:player.y+1.5,z:player.z};var cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch);var pos={x:target.x+Math.sin(cam.yaw)*cam.dist*cp,y:target.y+cam.height+sp*cam.dist*.35,z:target.z+Math.cos(cam.yaw)*cam.dist*cp};var f=norm(vsub(target,pos)),r=norm(cross(f,{x:0,y:1,z:0})),u=cross(r,f);return{p:pos,f:f,r:r,u:u};}
+function project(p,b){var q=vsub(p,b.p),z=dot(q,b.f);if(z<.2)return null;return{x:W*.5+dot(q,b.r)/z*focal,y:H*.52-dot(q,b.u)/z*focal,z:z};}
+function shade(hex,m){var n=parseInt(hex.slice(1),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;r=Math.max(0,Math.min(255,Math.round(r*m)));g=Math.max(0,Math.min(255,Math.round(g*m)));b=Math.max(0,Math.min(255,Math.round(b*m)));return'rgb('+r+','+g+','+b+')';}
+function poly(points,color,b,alpha){var ps=[],depth=0;for(var i=0;i<points.length;i++){var p=project(points[i],b);if(!p)return null;ps.push(p);depth+=p.z;}return{p:ps,c:color,d:depth/points.length,a:alpha==null?1:alpha};}
+function boxFaces(o,b,list){var x=o.x,z=o.z,y=o.y||0,w=o.w/2,d=o.d/2,h=o.h,c=o.c;var v=[{x:x-w,y:y,z:z-d},{x:x+w,y:y,z:z-d},{x:x+w,y:y,z:z+d},{x:x-w,y:y,z:z+d},{x:x-w,y:y+h,z:z-d},{x:x+w,y:y+h,z:z-d},{x:x+w,y:y+h,z:z+d},{x:x-w,y:y+h,z:z+d}];var fs=[[[4,5,6,7],shade(c,1.18)],[[0,1,5,4],shade(c,.78)],[[1,2,6,5],shade(c,.9)],[[2,3,7,6],shade(c,.72)],[[3,0,4,7],shade(c,.84)]];for(var i=0;i<fs.length;i++){var f=poly(fs[i][0].map(function(j){return v[j];}),fs[i][1],b);if(f)list.push(f);}}
+function prismRoof(o,b,list){var x=o.x,z=o.z,y=(o.y||0)+o.h,w=o.w/2+.15,d=o.d/2+.15,r=Math.min(2.2,o.h*.25);var a=[{x:x-w,y:y,z:z-d},{x:x+w,y:y,z:z-d},{x:x+w,y:y,z:z+d},{x:x-w,y:y,z:z+d},{x:x,y:y+r,z:z-d},{x:x,y:y+r,z:z+d}];var fs=[[[0,1,4],shade(colors.roof,.78)],[[3,5,2],shade(colors.roof,.82)],[[0,4,5,3],shade(colors.roof,.95)],[[1,2,5,4],shade(colors.roof,.7)]];for(var i=0;i<fs.length;i++){var f=poly(fs[i][0].map(function(j){return a[j];}),fs[i][1],b);if(f)list.push(f);}}
+function groundQuad(x1,z1,x2,z2,y,c,b,list){var f=poly([{x:x1,y:y,z:z1},{x:x2,y:y,z:z1},{x:x2,y:y,z:z2},{x:x1,y:y,z:z2}],c,b);if(f)list.push(f);}
+function drawPoly(f){ctx.globalAlpha=f.a;ctx.beginPath();ctx.moveTo(f.p[0].x,f.p[0].y);for(var i=1;i<f.p.length;i++)ctx.lineTo(f.p[i].x,f.p[i].y);ctx.closePath();ctx.fillStyle=f.c;ctx.fill();ctx.globalAlpha=1;}
+function characterFaces(ch,b,list,isPlayer){var bob=isPlayer?Math.sin(walkT)*.05:0;var body={x:ch.x,y:ch.y+bob+.15,z:ch.z,w:.85,d:.55,h:1.55,c:isPlayer?colors.coat:colors.guard};boxFaces(body,b,list);var head={x:ch.x,y:ch.y+bob+1.75,z:ch.z,w:.55,d:.55,h:.55,c:colors.skin};boxFaces(head,b,list);}
+function marker(x,y,z,c,b,list){var s=.8+Math.sin(performance.now()*.004)*.12;var p=[{x:x,y:y+s,z:z},{x:x+s,y:y,z:z},{x:x,y:y-s,z:z},{x:x-s,y:y,z:z}];var f=poly(p,c,b,.86);if(f)list.push(f);}
+function render(){var grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,'#789394');grad.addColorStop(.55,'#a8a792');grad.addColorStop(1,'#536351');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);var b=cameraBasis(),faces=[];
+  groundQuad(-95,-50,95,95,0,colors.grass,b,faces);groundQuad(-95,-115,95,-50,-.2,colors.water,b,faces);
+  var roads=[[-8,-50,8,80],[-45,-48,-32,62],[32,-48,45,62],[-48,19,48,31],[-54,-28,54,-17]];for(var i=0;i<roads.length;i++)groundQuad(roads[i][0],roads[i][1],roads[i][2],roads[i][3],.015,colors.road,b,faces);
+  for(var gx=-80;gx<80;gx+=10)for(var gz=-45;gz<90;gz+=10){if((gx+gz)%20===0)groundQuad(gx,gz,gx+10,gz+10,.018,'rgba(255,255,255,.018)',b,faces);}
+  for(i=0;i<buildings.length;i++){boxFaces(buildings[i],b,faces);if(i<10)prismRoof(buildings[i],b,faces);}
+  for(i=0;i<3;i++)boxFaces({x:-22+i*22,y:0,z:-85,w:12,d:29,h:.7,c:colors.wood},b,faces);
+  boxFaces({x:0,y:.15,z:-101,w:8,d:14,h:1.2,c:'#403329'},b,faces);boxFaces({x:0,y:1.3,z:-101,w:.35,d:.35,h:9,c:colors.wood},b,faces);
+  for(i=0;i<bushes.length;i++){boxFaces({x:bushes[i].x,y:0,z:bushes[i].z,w:3.2,d:2.3,h:1.8,c:'#31533b'},b,faces);}
+  for(i=0;i<decor.length;i++){var q=decor[i];boxFaces({x:q.x,y:0,z:q.z,w:.18,d:.18,h:2.4*q.s,c:'#594532'},b,faces);boxFaces({x:q.x,y:2*q.s,z:q.z,w:1.8*q.s,d:1.8*q.s,h:1.7*q.s,c:'#3c5d43'},b,faces);}
+  for(i=0;i<guards.length;i++){var g=guards[i];if(g.down<=0){var len=8,ang=.58;var a1=g.yaw-ang,a2=g.yaw+ang;var cone=poly([{x:g.x,y:.03,z:g.z},{x:g.x+Math.sin(a1)*len,y:.03,z:g.z+Math.cos(a1)*len},{x:g.x+Math.sin(a2)*len,y:.03,z:g.z+Math.cos(a2)*len}],g.state==='chase'?'#c95a47':'#d8bb65',b,.16);if(cone)faces.push(cone);}characterFaces(g,b,faces,false);}
+  characterFaces(player,b,faces,true);
+  if(stage===0)marker(-47,13,39,colors.gold,b,faces);if(stage===1)marker(0,7,-44,colors.gold,b,faces);if(stage===2)marker(0,2.5,-63,colors.gold,b,faces);if(stage===3)marker(0,2,-98,'#69d7c8',b,faces);
+  faces.sort(function(a,c){return c.d-a.d;});for(i=0;i<faces.length;i++)drawPoly(faces[i]);
+  var horizon=project({x:player.x,y:0,z:player.z-80},b);if(horizon){ctx.fillStyle='rgba(255,235,194,.16)';ctx.fillRect(0,Math.max(0,horizon.y-1),W,2);}
+}
+function insideBuilding(x,z,ignore){for(var i=0;i<buildings.length;i++){if(i===ignore)continue;var o=buildings[i];if(x>o.x-o.w/2-.35&&x<o.x+o.w/2+.35&&z>o.z-o.d/2-.35&&z<o.z+o.d/2+.35)return i;}return-1;}
+function nearBuilding(){var best=-1,dist=999;for(var i=0;i<buildings.length;i++){var o=buildings[i];if(!o.climb)continue;var dx=Math.max(Math.abs(player.x-o.x)-o.w/2,0),dz=Math.max(Math.abs(player.z-o.z)-o.d/2,0),d=Math.hypot(dx,dz);if(d<dist){dist=d;best=i;}}return dist<1.8?best:-1;}
+function nearestBush(){var k=-1,d=99;for(var i=0;i<bushes.length;i++){var q=Math.hypot(player.x-bushes[i].x,player.z-bushes[i].z);if(q<d){d=q;k=i;}}return d<2.6?k:-1;}
+function nearestGuard(){var k=-1,d=99;for(var i=0;i<guards.length;i++){if(guards[i].down>0)continue;var q=Math.hypot(player.x-guards[i].x,player.z-guards[i].z);if(q<d){d=q;k=i;}}return d<2.15?k:-1;}
+function say(t){toast.textContent=t;toast.classList.add('show');toastTimer=2.2;}
+function objective(){return['Climb to the church roof and survey the harbor.','Reach the fort gate and scout the command yard.','Recover the governor\'s cipher from the command table.','Escape aboard the marked boat.','Mission complete.'][stage];}
+function act(){if(actCooldown>0)return;actCooldown=.28;var ng=nearestGuard();if(ng>=0){var g=guards[ng],toP=Math.atan2(player.x-g.x,player.z-g.z),behind=Math.abs(Math.atan2(Math.sin(toP-g.yaw),Math.cos(toP-g.yaw)))>2.1;if(behind||g.state!=='chase'){g.down=16;g.sus=0;g.state='patrol';say('Guard disabled');return;}}
+  var nb=nearestBush();if(nb>=0&&player.onRoof<0){player.hidden=!player.hidden;say(player.hidden?'Hidden in brush':'Left cover');return;}
+  if(player.onRoof>=0){var o=buildings[player.onRoof];player.y=0;player.onRoof=-1;player.x=o.x+o.w/2+1;player.hidden=false;say('Dropped to street');return;}
+  var bi=nearBuilding();if(bi>=0){var q=buildings[bi];player.onRoof=bi;player.y=q.h+.12;player.x=Math.max(q.x-q.w/2+.8,Math.min(q.x+q.w/2-.8,player.x));player.z=Math.max(q.z-q.d/2+.8,Math.min(q.z+q.d/2-.8,player.z));say('Climbed to roof');return;}
+  if(stage===2&&Math.hypot(player.x,player.z+63)<3.2){stage=3;say('Cipher secured. Reach the boat.');return;}
+}
+function updateGuards(dt){var maxSus=0;for(var i=0;i<guards.length;i++){var g=guards[i];g.cool=Math.max(0,g.cool-dt);if(g.down>0){g.down-=dt;continue;}var dx=player.x-g.x,dz=player.z-g.z,dist=Math.hypot(dx,dz),ang=Math.abs(Math.atan2(Math.sin(Math.atan2(dx,dz)-g.yaw),Math.cos(Math.atan2(dx,dz)-g.yaw)));var seen=!player.hidden&&player.y<7&&dist<15&&ang<.68;if(seen){g.sus+=dt*(input.run?52:34);g.lastX=player.x;g.lastZ=player.z;if(g.sus>=100)g.state='chase';else if(g.sus>22)g.state='investigate';}else g.sus=Math.max(0,g.sus-dt*(g.state==='chase'?5:18));var tx,tz,speed;if(g.state==='chase'){tx=player.x;tz=player.z;speed=3.2;}else if(g.state==='investigate'){tx=g.lastX;tz=g.lastZ;speed=2.05;if(Math.hypot(g.x-tx,g.z-tz)<1&&g.sus<10)g.state='patrol';}else{tx=g.path[g.index][0];tz=g.path[g.index][1];speed=1.5;if(Math.hypot(g.x-tx,g.z-tz)<.8)g.index=(g.index+1)%g.path.length;}var vx=tx-g.x,vz=tz-g.z,l=Math.hypot(vx,vz);if(l>.05){vx/=l;vz/=l;g.yaw=Math.atan2(vx,vz);g.x+=vx*speed*dt;g.z+=vz*speed*dt;}if(g.state==='chase'&&dist<1.45&&g.cool<=0){player.health=Math.max(0,player.health-12);g.cool=1.15;say('You were struck');if(player.health<=0){player.health=100;player.x=0;player.z=58;player.y=0;player.onRoof=-1;for(var j=0;j<guards.length;j++){guards[j].sus=0;guards[j].state='patrol';}say('Returned to checkpoint');}}maxSus=Math.max(maxSus,g.sus);}alertFill.style.setProperty('--a',Math.min(100,maxSus)+'%');alertText.textContent=maxSus>=100?'DETECTED':maxSus>22?'SUSPICIOUS':'UNSEEN';}
+function update(dt){actCooldown=Math.max(0,actCooldown-dt);if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)toast.classList.remove('show');}var kx=(keys.KeyD?1:0)-(keys.KeyA?1:0),ky=(keys.KeyW?1:0)-(keys.KeyS?1:0),ix=Math.abs(input.x)>.05?input.x:kx,iy=Math.abs(input.y)>.05?input.y:ky;if(player.hidden&&(Math.hypot(ix,iy)>.15))player.hidden=false;var mag=Math.hypot(ix,iy);if(mag>.08){ix/=mag;iy/=mag;var fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=fz,rz=-fx;var vx=fx*iy+rx*ix,vz=fz*iy+rz*ix;player.yaw=Math.atan2(vx,vz);var speed=(input.run||keys.ShiftLeft)?6.2:3.65,nx=player.x+vx*speed*dt,nz=player.z+vz*speed*dt;if(player.onRoof>=0){var o=buildings[player.onRoof];nx=Math.max(o.x-o.w/2+.45,Math.min(o.x+o.w/2-.45,nx));nz=Math.max(o.z-o.d/2+.45,Math.min(o.z+o.d/2-.45,nz));player.x=nx;player.z=nz;}else if(insideBuilding(nx,nz,-1)<0){player.x=nx;player.z=nz;}walkT+=dt*speed*4;}if(input.jump&&player.onGround&&player.onRoof<0){player.vy=6.6;player.onGround=false;input.jump=false;}if(player.onRoof<0){player.vy-=17*dt;player.y+=player.vy*dt;if(player.y<=0){player.y=0;player.vy=0;player.onGround=true;}}if(input.act){input.act=false;act();}
+  if(stage===0&&player.onRoof===8){stage=1;say('Harbor surveyed. Reach the fort.');}
+  if(stage===1&&player.z<-45&&Math.abs(player.x)<12){stage=2;say('Fort scouted. Find the cipher.');}
+  if(stage===3&&Math.hypot(player.x,player.z+98)<4){stage=4;complete=true;paused=true;end.classList.remove('hidden');hud.classList.add('hidden');controls.classList.add('hidden');}
+  objectiveText.textContent=objective();healthText.textContent='HEALTH '+Math.round(player.health);healthFill.style.width=player.health+'%';
+  var p='';var ng=nearestGuard(),nb=nearestBush(),bi=nearBuilding();if(ng>=0)p='ACT: stealth takedown';else if(nb>=0&&player.onRoof<0)p=player.hidden?'ACT: leave cover':'ACT: hide in brush';else if(player.onRoof>=0)p='ACT: drop to street';else if(bi>=0)p='ACT: climb building';else if(stage===2&&Math.hypot(player.x,player.z+63)<3.2)p='ACT: take cipher';prompt.textContent=p;prompt.classList.toggle('show',!!p);updateGuards(dt);
+}
+function loop(t){var dt=Math.min(.034,(t-last)/1000||.016);last=t;if(playing&&!paused&&!complete)update(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+function startGame(e){if(e&&e.preventDefault)e.preventDefault();if(playing&&!paused)return;playing=true;paused=false;start.classList.add('hidden');hud.classList.remove('hidden');controls.classList.remove('hidden');objectiveText.textContent=objective();say('Reach the church roof');}
+function setPause(v){if(!playing||complete)return;paused=v;pause.classList.toggle('hidden',!v);hud.classList.toggle('hidden',v);controls.classList.toggle('hidden',v);}
+var startBtn=document.getElementById('startBtn');startBtn.addEventListener('click',startGame);startBtn.addEventListener('pointerup',startGame);startBtn.addEventListener('touchend',startGame,{passive:false});document.getElementById('pauseBtn').onclick=function(){setPause(true)};document.getElementById('resumeBtn').onclick=function(){setPause(false)};document.getElementById('restartBtn').onclick=function(){location.reload()};
+addEventListener('keydown',function(e){keys[e.code]=true;if(e.code==='Space')input.jump=true;if(e.code==='KeyE')input.act=true;if(e.code==='Escape')setPause(!paused)});addEventListener('keyup',function(e){keys[e.code]=false});
+var stick=document.getElementById('stick'),knob=document.getElementById('knob'),stickId=null;
+function moveStick(e){var r=stick.getBoundingClientRect(),x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2),m=Math.hypot(x,y),lim=r.width*.31;if(m>lim){x=x/m*lim;y=y/m*lim;}knob.style.transform='translate('+x+'px,'+y+'px)';input.x=x/lim;input.y=-y/lim;}
+stick.addEventListener('pointerdown',function(e){stickId=e.pointerId;stick.setPointerCapture(e.pointerId);moveStick(e)});stick.addEventListener('pointermove',function(e){if(e.pointerId===stickId)moveStick(e)});function endStick(e){if(e.pointerId!==stickId)return;stickId=null;input.x=input.y=0;knob.style.transform='translate(0,0)';}stick.addEventListener('pointerup',endStick);stick.addEventListener('pointercancel',endStick);
+function holdButton(id,on,off){var el=document.getElementById(id);el.addEventListener('pointerdown',function(e){e.preventDefault();el.classList.add('active');on();});function u(e){e.preventDefault();el.classList.remove('active');off();}el.addEventListener('pointerup',u);el.addEventListener('pointercancel',u);el.addEventListener('pointerleave',function(e){if(e.buttons)u(e)});}
+holdButton('run',function(){input.run=true},function(){input.run=false});holdButton('jump',function(){input.jump=true},function(){});holdButton('act',function(){input.act=true},function(){});
+var dragId=null,lastX=0,lastY=0;canvas.addEventListener('pointerdown',function(e){if(!playing||paused)return;dragId=e.pointerId;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',function(e){if(e.pointerId!==dragId)return;var dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;cam.yaw-=dx*.007;cam.pitch=Math.max(-.08,Math.min(.6,cam.pitch+dy*.004));});canvas.addEventListener('pointerup',function(e){if(e.pointerId===dragId)dragId=null});canvas.addEventListener('pointercancel',function(e){if(e.pointerId===dragId)dragId=null});
+addEventListener('visibilitychange',function(){if(document.hidden&&playing&&!paused)setPause(true)});addEventListener('contextmenu',function(e){e.preventDefault()});
+window.__frontierShadow={getState:function(){return{stage:stage,health:player.health,paused:paused,hidden:player.hidden,onRoof:player.onRoof,player:[player.x,player.y,player.z]};},start:startGame,teleport:function(x,y,z){player.x=x;player.y=y||0;player.z=z;player.onRoof=-1;},act:function(){input.act=true;}};
+})();
+</script>
+</body>
+</html>
